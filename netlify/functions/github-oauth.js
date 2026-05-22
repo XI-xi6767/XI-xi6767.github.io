@@ -45,16 +45,34 @@ exports.handler = async (event, context) => {
 
     const userData = await userResponse.json()
 
+    // 返回一个 HTML 页面，用于处理 OAuth 回调
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>OAuth Callback</title>
+  <script>
+    window.opener.postMessage({
+      type: 'GITHUB_OAUTH_SUCCESS',
+      token: '${accessToken}',
+      user: ${JSON.stringify(userData)}
+    }, '*');
+    window.close();
+  </script>
+</head>
+<body>
+  <p>授权成功，请关闭此窗口...</p>
+</body>
+</html>
+`
+
     return {
       statusCode: 200,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        'Content-Type': 'text/html'
       },
-      body: JSON.stringify({
-        token: accessToken,
-        user: userData
-      })
+      body: html
     }
   } catch (error) {
     return {

@@ -1,9 +1,7 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const GITHUB_CLIENT_ID = 'Ov23lirIxz2Dsxcw3QzI'
 const OWNER_USERNAME = 'XI-xi6767'
-
-const NETLIFY_FUNCTION_URL = '.netlify/functions/github-oauth'
 
 const githubToken = ref(null)
 const githubUser = ref(null)
@@ -26,6 +24,8 @@ export function useGithubAuth() {
   })
 
   function login() {
+    isLoading.value = true
+    
     const state = generateRandomString(16)
     sessionStorage.setItem('github_oauth_state', state)
 
@@ -39,56 +39,36 @@ export function useGithubAuth() {
       state: state
     })
 
-    window.location.href = `https://github.com/login/oauth/authorize?${params.toString()}`
-  }
+    const authUrl = `https://github.com/login/oauth/authorize?${params.toString()}`
+    
+    const width = 600
+    const height = 600
+    const left = (window.innerWidth - width) / 2
+    const top = (window.innerHeight - height) / 2
 
-  async function handleCallback() {
-    const queryParams = new URLSearchParams(window.location.search)
-    const code = queryParams.get('code')
-    const state = queryParams.get('state')
-    const error = queryParams.get('error')
+    const popup = window.open(
+      authUrl,
+      'GitHub OAuth',
+      `width=${width},height=${height},left=${left},top=${top}`
+    )
 
-    if (error) {
-      console.error('OAuth error:', error)
-      return false
-    }
-
-    if (state !== sessionStorage.getItem('github_oauth_state')) {
-      console.error('State mismatch')
-      return false
-    }
-
-    if (code) {
-      try {
-        const baseUrl = getBaseUrl()
-        const response = await fetch(`${baseUrl}/.netlify/functions/github-oauth?code=${code}`)
-
-        if (!response.ok) {
-          throw new Error('Failed to exchange code for token')
-        }
-
-        const data = await response.json()
-
-        if (data.error) {
-          throw new Error(data.error)
-        }
-
-        githubToken.value = data.token
-        githubUser.value = data.user
-        sessionStorage.setItem('github_token', data.token)
-        sessionStorage.setItem('github_user', JSON.stringify(data.user))
-
-        const cleanUrl = window.location.pathname
-        window.history.replaceState({}, document.title, cleanUrl)
-
-        return true
-      } catch (error) {
-        console.error('Error during OAuth callback:', error)
-        return false
+    const handleMessage = (event) => {
+      if (event.data?.type === 'GITHUB_OAUTH_SUCCESS') {
+        const { token, user } = event.data
+        
+        githubToken.value = token
+        githubUser.value = user
+        sessionStorage.setItem('github_token', token)
+        sessionStorage.setItem('github_user', JSON.stringify(user))
+        
+        popup.close()
+        isLoading.value = false
+        
+        window.removeEventListener('message', handleMessage)
       }
     }
 
-    return false
+    window.addEventListener('message', handleMessage)
   }
 
   function logout() {
@@ -139,7 +119,6 @@ export function useGithubAuth() {
     isLoading,
     login,
     logout,
-    handleCallback,
     checkAuth,
     githubUser,
     simulateLogin

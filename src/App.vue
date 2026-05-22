@@ -114,7 +114,7 @@ import { useGithubAuth } from '@/utils/githubAuth'
 
 const router = useRouter()
 const route = useRoute()
-const { isOwner, login, logout, handleCallback, checkAuth, githubUser, simulateLogin } = useGithubAuth()
+const { isOwner, login, logout, checkAuth, githubUser, simulateLogin } = useGithubAuth()
 
 const isLocalhost = window.location.hostname === 'localhost'
 
@@ -139,18 +139,8 @@ function handleLogout() {
   router.push('/')
 }
 
-onMounted(async () => {
-  const urlParams = new URLSearchParams(window.location.search)
-  if (urlParams.has('code')) {
-    isLoading.value = true
-    const success = await handleCallback()
-    isLoading.value = false
-    if (!success) {
-      loginError.value = true
-    }
-  } else {
-    checkAuth()
-  }
+onMounted(() => {
+  checkAuth()
 })
 </script>
 
