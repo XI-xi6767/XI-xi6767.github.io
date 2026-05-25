@@ -176,8 +176,9 @@ html, body {
 
 .shared-mode {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
+  background: #000;
+  margin: 0;
+  padding: 0;
 }
 
 .normal-mode {
