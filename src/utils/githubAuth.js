@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 
 const GITHUB_CLIENT_ID = 'Ov23lirIxz2Dsxcw3QzI'
 const OWNER_USERNAME = 'XI-xi6767'

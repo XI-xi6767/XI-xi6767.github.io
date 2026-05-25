@@ -1,133 +1,120 @@
 <template>
-  <div class="project-detail">
-    <div v-if="project" class="detail-content">
-      <div v-if="!isSharedMode" class="back-btn" @click="$router.back()">
+  <div class="project-detail" :class="{ 'fullscreen-mode': isFullscreen || isSharedMode }">
+    <!-- 全屏模式 - 只显示 iframe -->
+    <div v-if="project && (isFullscreen || isSharedMode)" class="fullscreen-content">
+      <div 
+        v-if="!isSharedMode" 
+        class="fullscreen-exit" 
+        :class="{ 'hidden': !showControls }"
+        @click="toggleFullscreen"
+        @mouseenter="showControls = true"
+        @mouseleave="hideControlsWithDelay"
+      >
         <el-icon :size="20"><ArrowLeft /></el-icon>
-        <span>返回列表</span>
+        <span>退出全屏</span>
       </div>
+      
+      <!-- 显示/隐藏控制栏的触发区域 -->
+      <div 
+        v-if="!isSharedMode" 
+        class="control-trigger"
+        @mouseenter="showControls = true"
+      ></div>
+      
+      <iframe 
+        :src="project.path" 
+        :title="project.title"
+        class="fullscreen-iframe"
+        sandbox="allow-scripts allow-same-origin allow-forms"
+      ></iframe>
+    </div>
 
-      <div v-if="isOwner && !isSharedMode" class="share-section">
-        <el-button type="primary" @click="copyShareLink" class="share-btn">
-          <el-icon :size="16"><Link /></el-icon>
-          复制分享链接
-        </el-button>
-        <span class="share-hint">分享此链接给同事/领导，他们只能看到这个方案</span>
-      </div>
-
-      <div class="detail-header">
-        <div class="header-icon">
-          <el-icon size="56" color="white">
-            <Box />
-          </el-icon>
-        </div>
-        <h1 class="header-title">{{ project.name }}</h1>
-        <p class="header-desc">{{ project.description }}</p>
-      </div>
-
-      <div class="info-grid">
-        <div class="info-card">
-          <div class="info-icon">
-            <el-icon size="24" color="#667eea"><Bell /></el-icon>
+    <!-- 正常模式 -->
+    <div v-else-if="project" class="detail-content">
+      <!-- 顶部控制栏 -->
+      <div 
+        class="top-bar"
+        :class="{ 'hidden': !showControls }"
+        @mouseenter="showControls = true"
+        @mouseleave="hideControlsWithDelay"
+      >
+        <!-- 左上角：返回 + 方案信息 -->
+        <div class="top-left">
+          <div class="back-btn" @click.stop="$router.back()">
+            <el-icon :size="18"><ArrowLeft /></el-icon>
+            <span>返回</span>
           </div>
-          <div class="info-content">
-            <span class="info-label">客户公司</span>
-            <span class="info-value">{{ project.client }}</span>
-          </div>
-        </div>
-
-        <div class="info-card">
-          <div class="info-icon">
-            <el-icon size="24" color="#764ba2"><Calendar /></el-icon>
-          </div>
-          <div class="info-content">
-            <span class="info-label">项目日期</span>
-            <span class="info-value">{{ project.date }}</span>
-          </div>
-        </div>
-
-        <div class="info-card">
-          <div class="info-icon">
-            <el-icon size="24" color="#f093fb"><Camera /></el-icon>
-          </div>
-          <div class="info-content">
-            <span class="info-label">行业类型</span>
-            <span class="info-value">{{ project.industry }}</span>
+          <div class="divider"></div>
+          <div class="project-info">
+            <div class="info-thumbnail" v-if="project.thumbnail">
+              <img :src="project.thumbnail" :alt="project.title" />
+            </div>
+            <div class="info-thumbnail" v-else>
+              <el-icon size="18" color="white"><Box /></el-icon>
+            </div>
+            <div class="info-text">
+              <h3 class="info-title">{{ project.title }}</h3>
+              <p class="info-desc">{{ project.description }}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="section">
-        <h3 class="section-title">
-          <el-icon :size="20" color="#667eea"><Clock /></el-icon>
-          项目目标
-        </h3>
-        <ul class="objectives-list">
-          <li v-for="(objective, index) in project.objectives" :key="index">
-            <span class="bullet"></span>
-            {{ objective }}
-          </li>
-        </ul>
-      </div>
-
-      <div class="section">
-        <h3 class="section-title">
-          <el-icon :size="20" color="#764ba2"><Coffee /></el-icon>
-          解决方案
-        </h3>
-        <p class="solution-text">{{ project.solution }}</p>
-      </div>
-
-      <div class="section">
-        <h3 class="section-title">
-          <el-icon :size="20" color="#f093fb"><CreditCard /></el-icon>
-          项目成果
-        </h3>
-        <div class="results-grid">
-          <div
-            v-for="(result, index) in project.results"
-            :key="index"
-            class="result-card"
-          >
-            <div class="result-value">{{ result.value }}</div>
-            <div class="result-label">{{ result.label }}</div>
+        <!-- 右上角：操作按钮 -->
+        <div v-if="isOwner" class="top-right">
+          <div class="action-btn share-btn" @click.stop="copyShareLink">
+            <el-icon :size="16"><Link /></el-icon>
+            <span>分享链接</span>
+          </div>
+          <div class="action-btn fullscreen-btn" @click.stop="toggleFullscreen">
+            <el-icon :size="16"><FullScreen /></el-icon>
+            <span>全屏预览</span>
           </div>
         </div>
       </div>
 
-      <div class="section">
-        <h3 class="section-title">
-          <el-icon :size="20" color="#f5576c"><Apple /></el-icon>
-          使用技术
-        </h3>
-        <div class="tech-tags">
-          <el-tag
-            v-for="tech in project.technologies"
-            :key="tech"
-            class="tech-tag"
-          >
-            {{ tech }}
-          </el-tag>
-        </div>
+      <!-- 显示/隐藏控制栏的触发区域 -->
+      <div 
+        class="control-trigger"
+        @mouseenter="showControls = true"
+      ></div>
+
+      <div class="iframe-container">
+        <iframe 
+          :src="project.path" 
+          :title="project.title"
+          class="project-iframe"
+          sandbox="allow-scripts allow-same-origin allow-forms"
+        ></iframe>
       </div>
 
-      <GiscusComments :discussion-id="`project-${project?.id}`" />
-
-      <div v-if="isSharedMode" class="shared-footer">
-        <p>来自个人作品集 - 专业原型与交互方案</p>
+      <div class="comments-section">
+        <GiscusComments :discussion-id="`project-${project?.id}`" />
       </div>
     </div>
 
     <div v-else class="not-found">
-      <el-icon size="64" color="#ccc"><Bell /></el-icon>
-      <p>方案不存在</p>
-      <el-button @click="$router.push('/projects')">返回列表</el-button>
+      <div class="not-found-content">
+        <el-icon size="80" color="rgba(255,255,255,0.3)"><Bell /></el-icon>
+        <h2>方案不存在</h2>
+        <p>这个方案可能已被删除或链接有误</p>
+        <el-button type="primary" size="large" @click="$router.push('/projects')">
+          <el-icon><ArrowLeft /></el-icon>
+          返回方案列表
+        </el-button>
+      </div>
     </div>
 
-    <el-dialog v-model="showShareSuccess" title="分享链接已复制" width="400px">
-      <p style="text-align: center;">分享链接已复制到剪贴板</p>
-      <p style="text-align: center; color: #666; font-size: 0.9rem; margin-top: 10px;">
-        对方访问此链接后，只能看到这个方案，看不到其他内容
-      </p>
+    <el-dialog v-model="showShareSuccess" title="分享链接已复制" width="420px" center>
+      <div class="share-success-content">
+        <div class="success-icon">
+          <el-icon :size="48" color="#67c23a"><CircleCheck /></el-icon>
+        </div>
+        <p>分享链接已复制到剪贴板</p>
+        <p class="success-hint">对方访问此链接后，直接打开全屏方案，没有其他干扰</p>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="showShareSuccess = false">好的</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -139,16 +126,12 @@ import {
   ArrowLeft,
   Box,
   Bell,
-  Calendar,
-  Camera,
-  Clock,
-  Coffee,
-  CreditCard,
-  Apple,
-  Link
+  Link,
+  FullScreen,
+  CircleCheck
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { projectsList } from '@/data/projects'
+import { loadProjects, getProjectByPath } from '@/data/projects'
 import { useGithubAuth } from '@/utils/githubAuth'
 import GiscusComments from '@/components/GiscusComments.vue'
 
@@ -157,288 +140,402 @@ const { isOwner } = useGithubAuth()
 
 const project = ref(null)
 const showShareSuccess = ref(false)
+const isFullscreen = ref(false)
+const showControls = ref(true)
+let hideTimer = null
 
 const isSharedMode = computed(() => {
   return route.query.shared === 'true'
 })
 
+const hideControlsWithDelay = () => {
+  if (hideTimer) clearTimeout(hideTimer)
+  hideTimer = setTimeout(() => {
+    showControls.value = false
+  }, 1500)
+}
+
 function copyShareLink() {
   const baseUrl = window.location.origin + window.location.pathname
-  const shareUrl = `${baseUrl}?shared=true&id=${project.value.id}`
+  const shareUrl = `${baseUrl}?shared=true`
   navigator.clipboard.writeText(shareUrl).then(() => {
     showShareSuccess.value = true
+    setTimeout(() => {
+      showShareSuccess.value = false
+    }, 2000)
   }).catch(() => {
     ElMessage.error('复制失败，请手动复制')
   })
 }
 
-onMounted(() => {
-  let id = route.query.id ? parseInt(route.query.id) : parseInt(route.params.id)
+function toggleFullscreen() {
+  isFullscreen.value = !isFullscreen.value
+}
 
-  if (!id || isNaN(id)) {
-    id = parseInt(route.path.split('/').pop())
-  }
-
-  project.value = projectsList.find(p => p.id === id)
+onMounted(async () => {
+  await loadProjects()
+  
+  // 构建项目路径
+  const category = route.params.category
+  const pathMatch = route.params.pathMatch || []
+  // 将路径匹配转换为完整的路径
+  const projectPath = `/projects/${category}/${Array.isArray(pathMatch) ? pathMatch.join('/') : pathMatch}`
+  
+  // 通过路径查找项目
+  project.value = getProjectByPath(projectPath, category)
+  
+  // 页面加载后自动隐藏控制栏
+  setTimeout(() => {
+    showControls.value = false
+  }, 2000)
 })
 </script>
 
 <style scoped>
+/* 全屏模式 */
+.project-detail.fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0;
+  margin: 0;
+  z-index: 9999;
+  background: #000;
+}
+
+.fullscreen-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.fullscreen-exit {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fullscreen-exit.hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+.fullscreen-exit:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.fullscreen-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* 正常模式（项目详情页现在也是全屏） */
 .project-detail {
-  max-width: 900px;
-  margin: 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+  background: #0a0a0a;
+}
+
+.detail-content {
+  width: 100%;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  position: relative;
+}
+
+/* 顶部控制栏 */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.top-bar.hidden {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
+/* 控制栏触发区域 */
+.control-trigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  z-index: 9998;
+  background: transparent;
+}
+
+.detail-content .control-trigger {
+  position: fixed;
+}
+
+.top-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .back-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: white;
   cursor: pointer;
-  margin-bottom: 30px;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .back-btn:hover {
   color: white;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.project-info {
+  display: flex;
+  align-items: center;
   gap: 12px;
 }
 
-.share-section {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 30px;
-  padding: 15px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-}
-
-.share-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.share-hint {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
-}
-
-.detail-content {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-}
-
-.detail-header {
-  text-align: center;
-  padding-bottom: 30px;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 30px;
-}
-
-.header-icon {
-  width: 120px;
-  height: 120px;
-  border-radius: 30px;
+.info-thumbnail {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  overflow: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 25px;
-  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.header-title {
-  font-size: 2.2rem;
-  color: #333;
-  margin-bottom: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.info-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.header-desc {
-  font-size: 1.1rem;
-  color: #666;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.info-card {
-  background: #f8f9fa;
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.info-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-}
-
-.info-content {
+.info-text {
   display: flex;
   flex-direction: column;
+  gap: 3px;
 }
 
-.info-label {
-  font-size: 0.85rem;
-  color: #999;
-  margin-bottom: 5px;
-}
-
-.info-value {
+.info-title {
   font-size: 1rem;
-  color: #333;
+  color: white;
+  margin: 0;
   font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 
-.section {
-  margin-bottom: 35px;
+.info-desc {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.3;
 }
 
-.section-title {
-  font-size: 1.4rem;
-  color: #333;
-  margin-bottom: 20px;
+.top-right {
   display: flex;
-  align-items: center;
   gap: 10px;
 }
 
-.objectives-list {
-  list-style: none;
-  padding: 0;
-}
-
-.objectives-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 15px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.objectives-list li:last-child {
-  border-bottom: none;
-}
-
-.bullet {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  margin-top: 6px;
-  flex-shrink: 0;
-}
-
-.objectives-list li span:last-child {
-  color: #555;
-  line-height: 1.6;
-}
-
-.solution-text {
-  color: #555;
-  line-height: 1.8;
-  font-size: 1rem;
-  background: #f8f9fa;
-  padding: 25px;
-  border-radius: 16px;
-}
-
-.results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
-}
-
-.result-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 25px;
-  text-align: center;
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: white;
-}
-
-.result-value {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 5px;
-}
-
-.result-label {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 0.9rem;
-  opacity: 0.9;
-}
-
-.tech-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.tech-tag {
-  background: #f0f5ff;
-  color: #667eea;
-  border: 1px solid #e6f0ff;
-  padding: 10px 20px;
-  border-radius: 25px;
   font-weight: 500;
 }
 
-.shared-footer {
-  text-align: center;
-  padding-top: 30px;
-  margin-top: 30px;
-  border-top: 1px solid #eee;
-  color: #999;
-  font-size: 0.9rem;
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.fullscreen-btn {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.fullscreen-btn:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.iframe-container {
+  width: 100%;
+  height: 100vh;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+  background: #000;
+}
+
+.project-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.comments-section {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px 24px;
 }
 
 .not-found {
-  text-align: center;
-  padding: 60px;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.not-found p {
-  color: rgba(255, 255, 255, 0.7);
-  margin: 20px 0;
+.not-found-content {
+  text-align: center;
+  padding: 60px 40px;
+}
+
+.not-found-content h2 {
+  color: white;
+  font-size: 1.8rem;
+  margin: 20px 0 10px;
+  font-weight: 600;
+}
+
+.not-found-content p {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 30px;
+  font-size: 1rem;
+}
+
+.share-success-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-icon {
+  margin-bottom: 20px;
+  animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.share-success-content p {
+  margin: 8px 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.success-hint {
+  color: #999 !important;
+  font-size: 0.9rem !important;
 }
 
 @media (max-width: 768px) {
-  .detail-content {
-    padding: 25px;
+  .top-bar {
+    padding: 12px 16px;
   }
 
-  .header-title {
-    font-size: 1.8rem;
+  .info-desc {
+    display: none;
   }
 
-  .info-grid {
-    grid-template-columns: 1fr;
+  .back-btn span,
+  .share-btn span,
+  .fullscreen-btn span {
+    display: none;
   }
 
-  .share-section {
-    flex-direction: column;
-    align-items: flex-start;
+  .action-btn {
+    padding: 10px 14px;
+  }
+
+  .back-btn {
+    padding: 10px 12px;
+  }
+
+  .divider {
+    height: 28px;
+  }
+
+  .info-thumbnail {
+    width: 36px;
+    height: 36px;
   }
 }
 </style>

@@ -80,32 +80,11 @@
         <div class="stat-label">客户满意度</div>
       </div>
     </div>
-
-    <div class="owner-section" v-if="!isOwner">
-      <el-card class="owner-card">
-        <div class="owner-content">
-          <el-icon :size="40" color="#667eea"><Lock /></el-icon>
-          <div class="owner-text">
-            <h4>我是网站主人？</h4>
-            <p>输入密码解锁全部功能，包括作品集密码和更多受保护内容</p>
-            <el-button type="primary" size="small" @click="goToLogin">
-              去验证身份
-            </el-button>
-          </div>
-        </div>
-      </el-card>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { User, Folder, Briefcase, Box, Star, Bell, Lock } from '@element-plus/icons-vue'
-import { useAuth } from '@/utils/auth'
-
-const { isOwner } = useAuth()
-
-function goToLogin() {
-}
+import { User, Folder, Briefcase, Box, Star, Bell } from '@element-plus/icons-vue'
 </script>
 
 <style scoped>
@@ -291,33 +270,6 @@ function goToLogin() {
   margin-top: 5px;
 }
 
-.owner-section {
-  max-width: 600px;
-  margin: 60px auto 0;
-}
-
-.owner-card {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-radius: 16px !important;
-}
-
-.owner-content {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.owner-text h4 {
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.owner-text p {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 15px;
-}
-
 @media (max-width: 768px) {
   .hero-title {
     font-size: 2rem;
@@ -334,11 +286,6 @@ function goToLogin() {
 
   .feature-cards {
     grid-template-columns: 1fr;
-  }
-
-  .owner-content {
-    flex-direction: column;
-    text-align: center;
   }
 }
 </style>

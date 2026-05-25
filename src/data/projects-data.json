@@ -1,0 +1,27 @@
+{
+  "company": [
+    {
+      "type": "folder",
+      "id": "xuetangX",
+      "name": "xuetangX",
+      "title": "XuetangX",
+      "path": "/projects/company/xuetangX",
+      "children": [
+        {
+          "type": "project",
+          "id": "智能体pad适配",
+          "name": "智能体pad适配",
+          "title": "智能体全屏模式 - PAD 适配",
+          "description": "暂无描述",
+          "path": "/projects/company/xuetangX/智能体pad适配/index.html",
+          "thumbnail": "",
+          "isSpecial": false
+        }
+      ],
+      "isSpecial": false
+    }
+  ],
+  "portfolio": [
+  ],
+  "timestamp": 1779666942665
+}

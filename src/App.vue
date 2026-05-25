@@ -1,9 +1,16 @@
 <template>
   <div id="app">
-    <div v-if="isSharedMode" class="shared-mode">
+    <!-- 方案详情页全屏模式 -->
+    <div v-if="isProjectDetail" class="project-detail-mode">
       <router-view />
     </div>
 
+    <!-- 分享模式 -->
+    <div v-else-if="isSharedMode" class="shared-mode">
+      <router-view />
+    </div>
+
+    <!-- 正常模式 -->
     <div v-else class="normal-mode">
       <div v-if="!isOwner" class="login-overlay">
         <el-card class="login-card">
@@ -38,15 +45,6 @@
               <el-icon :size="18"><MagicStick /></el-icon>
               本地模拟登录（仅测试用）
             </el-button>
-            <el-alert
-              v-if="loginError"
-              type="error"
-              style="margin-top: 20px;"
-              closable
-              @close="loginError = false"
-            >
-              <span class="error-text">登录失败，请重试</span>
-            </el-alert>
           </div>
           <div class="visitor-links">
             <p class="visitor-hint">如果您是访客：</p>
@@ -107,26 +105,36 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { User, HomeFilled, Folder, Briefcase, SwitchButton, MagicStick } from '@element-plus/icons-vue'
 import { useGithubAuth } from '@/utils/githubAuth'
 
 const router = useRouter()
 const route = useRoute()
-const { isOwner, login, logout, checkAuth, githubUser, simulateLogin } = useGithubAuth()
+const { isOwner, login, logout, checkAuth, githubUser, simulateLogin, isLoading } = useGithubAuth()
 
 const isLocalhost = window.location.hostname === 'localhost'
-
-const loginError = ref(false)
-const isLoading = ref(false)
 
 const isSharedMode = computed(() => {
   return route.query.shared === 'true'
 })
 
+const isProjectDetail = computed(() => {
+  return route.path.startsWith('/projects/company/') || route.path.startsWith('/projects/portfolio/')
+})
+
+const currentPath = computed(() => route.path)
+
+const navLinks = computed(() => {
+  return [
+    { name: '首页', path: '/', icon: HomeFilled },
+    { name: '公司方案', path: '/projects/company', icon: Briefcase },
+    { name: '个人作品集', path: '/projects/portfolio', icon: Folder }
+  ]
+})
+
 function handleLogin() {
-  isLoading.value = true
   login()
 }
 
@@ -159,6 +167,11 @@ html, body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.project-detail-mode {
+  min-height: 100vh;
+  background: #000;
 }
 
 .shared-mode {
@@ -256,10 +269,6 @@ html, body {
   background: #f0f0f0 !important;
   border-color: #ddd !important;
   color: #666 !important;
-}
-
-.error-text {
-  color: #f56c6c;
 }
 
 .visitor-links {
@@ -389,8 +398,7 @@ html, body {
 }
 
 .main-content {
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 100%;
   padding: 40px 20px;
   min-height: calc(100vh - 140px);
 }

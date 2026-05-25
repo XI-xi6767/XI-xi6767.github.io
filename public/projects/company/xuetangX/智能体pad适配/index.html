@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能体全屏模式 - PAD 适配</title>
+    <style>
+        :root {
+            --primary: #4F6AF0;
+            --primary-dark: #3D56D9;
+            --bg-dark: #1A1A2E;
+            --bg-light: #F5F6FA;
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --border: #E2E8F0;
+            --success: #48BB78;
+            --warning: #ECC94B;
+            --danger: #F56565;
+            --header-height: 56px;
+            --input-height: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #0F0F1A;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .device-frame {
+            position: relative;
+            background: #000;
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.5);
+            transition: all 0.5s ease;
+        }
+
+        .device-frame.landscape {
+            width: 1100px;
+            height: 680px;
+        }
+
+        .device-frame.portrait {
+            width: 680px;
+            height: 900px;
+        }
+
+        .device-screen {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            background: url('李白.png') no-repeat center center;
+            background-size: cover;
+            border-radius: 32px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 主容器 */
+        .app-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 左侧边栏 */
+        .sidebar-left {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.8);
+            border-right: 1px solid rgba(0, 0, 0, 0.08);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-left.open {
+            transform: translateX(0);
+        }
+
+        /* 右侧边栏 */
+        .sidebar-right {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.8);
+            border-left: 1px solid rgba(0, 0, 0, 0.08);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-right.open {
+            transform: translateX(0);
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* 背景图容器 */
+        .background-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: cover;
+            background-position: center;
+            z-index: 0;
+        }
+
+        /* 对话容器 */
+        .chat-wrapper {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px 20px 0;
+        }
+
+        /* 对话框 - 默认模式 */
+        .chat-box-default {
+            width: 600px;
+            height: auto;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .chat-box-default .messages-container {
+            max-height: calc(100vh / 3);
+        }
+
+        /* 对话框 - 展开模式 */
+        .chat-box-expanded {
+            width: 600px;
+            height: calc(100vh - 220px);
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .chat-box-expanded .messages-container {
+            max-height: calc(100vh - 220px);
+            border-radius: 0;
+        }
+
+        .chat-box-expanded .messages-container.expanded {
+            border-radius: 0 0 16px 16px;
+        }
+
+        /* 对话头部 */
+        .chat-header {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.3);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-agent-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-agent-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .chat-agent-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .chat-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-control-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .chat-control-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .header-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 消息区域 */
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            min-height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 0;
+        }
+
+        /* 消息区域 - 展开模式（底部圆角） */
+        .messages-container.expanded {
+            border-radius: 0 0 16px 16px;
+        }
+
+        /* 默认提示 */
+        .default-hint {
+            display: flex;
+        }
+
+        .hint-text {
+            font-size: 16px;
+            color: rgba(0, 0, 0, 1);
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .message.agent .message-content {
+            background: rgba(245, 246, 250, 0.95);
+            color: var(--text-primary);
+            border-top-left-radius: 4px;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            border-top-right-radius: 4px;
+        }
+
+        .message-divider {
+            width: 100%;
+            height: 1px;
+            background: rgba(150, 150, 150, 0.03);
+            margin: 5px 0;
+        }
+
+        .message-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0;
+            height: auto;
+            align-items: center;
+        }
+
+        .pupple-speaker-btn-container {
+            display: flex;
+            align-items: center;
+            height: 20px;
+            width: auto;
+        }
+
+        .pupple-speaker-btn {
+            border: none;
+            background: transparent;  /* 透明背景 */
+            cursor: pointer;
+            transition: transform 0.2s;
+            padding: 0;
+            height: 16px;
+            /* padding: 5px; */
+            width: auto;
+        }
+
+        .pupple-speaker-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .pupple-speaker-btn img {
+            height: 100%;
+            width: auto;
+        }
+
+        /* 对话框底部 */
+        .chat-bottom {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.3);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .chat-bottom.none {
+            display: none;
+        }
+
+        .speaker-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.6);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .speaker-btn:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.05);
+        }
+
+        /* 底部渐变色区域 */
+        .bottom-gradient {
+            padding: 20px 100px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.01));
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            position: relative;
+        }
+
+        .input-btns {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 16px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            width: auto;
+            height: 35px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: transform 0.2s;
+            padding: 0;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .action-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .input-btn {
+            border: none;
+            background: transparent;  /* 透明背景 */
+            cursor: pointer;
+            transition: transform 0.2s;
+            padding: 0;
+        }
+
+        .input-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .voice-input-btn {
+            width: 80px;
+            height: auto;
+        }
+
+        .keyboard-input-btn {
+            width: 40px;
+            height: auto;
+        }
+
+        .input-btn img {
+            width: 100%;
+            height: 100%;
+          object-fit: contain;
+        }
+
+        /* 切换按钮 */
+        .toggle-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            z-index: 50;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-50%) scale(1.05);
+        }
+        .toggle-btn-left.close {
+            left: -100px;
+        }
+        .toggle-btn-left.open {
+            left: 12px;
+        }
+        .toggle-btn-right.close {
+            right: -100px;
+        }
+        .toggle-btn-right.open {
+            right: 12px;
+        }
+
+        /* 侧边栏内容 */
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .sidebar-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        /* 任务列表 */
+        .task-item {
+            background: #fff;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .task-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .task-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .task-badge.agent {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .task-badge.instruction {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: #fff;
+        }
+
+        .task-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .task-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .task-status {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .task-status.pending {
+            background: var(--warning);
+            color: #fff;
+        }
+
+        .task-status.completed {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .task-status.ended {
+            background: var(--text-secondary);
+            color: #fff;
+        }
+
+        /* 对话列表 */
+        .chat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .chat-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-item.active {
+            background: rgba(79, 106, 240, 0.1);
+            border: 1px solid rgba(79, 106, 240, 0.2);
+        }
+
+        .chat-item-icon {
+            font-size: 18px;
+        }
+
+        .chat-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-item-title {
+            font-size: 14px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-item-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .chat-item-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* 展开按钮 */
+        .expand-btn {
+            padding: 6px 12px;
+            background: rgba(79, 106, 240, 0.1);
+            border: 1px solid rgba(79, 106, 240, 0.2);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .expand-btn:hover {
+            background: rgba(79, 106, 240, 0.2);
+        }
+
+        /* 竖屏模式 */
+        .portrait-mode .sidebar-left,
+        .portrait-mode .sidebar-right {
+            display: none;
+        }
+
+        .portrait-mode .toggle-btn {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="device-frame landscape" id="device">
+        <div class="device-screen">
+            <div class="app-container">
+                <!-- 左侧切换按钮 -->
+                <button class="toggle-btn toggle-btn-left close" id="toggle-left">◀</button>
+                
+                <!-- 右侧切换按钮 -->
+                <button class="toggle-btn toggle-btn-right close" id="toggle-right">▶</button>
+
+                <!-- 左侧边栏 -->
+                <aside class="sidebar-left" id="sidebar-left">
+                    <div class="sidebar-header">
+                        <span class="sidebar-title">💬 历史对话</span>
+                        <button class="sidebar-close" id="close-left">×</button>
+                    </div>
+                    <div class="sidebar-content">
+                        <div id="chat-list">
+                            <!-- 对话列表由 JS 渲染 -->
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- 右侧边栏 -->
+                <aside class="sidebar-right" id="sidebar-right">
+                    <div class="sidebar-header">
+                        <span class="sidebar-title">📋 AI任务</span>
+                        <button class="sidebar-close" id="close-right">×</button>
+                    </div>
+                    <div class="sidebar-content">
+                        <!-- <div class="section-title">今日任务</div> -->
+                        <div id="task-list">
+                            <!-- 任务列表由 JS 渲染 -->
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- 主内容区 -->
+                <main class="main-content">
+                    <!-- 背景图 -->
+                    <div class="background-container" id="bg-container"></div>
+
+                    <!-- 对话容器 -->
+                    <div class="chat-wrapper">
+                        <div class="chat-box-default" id="chat-box">
+                            <div class="chat-header">
+                                <div class="chat-agent-info">
+                                    <div class="chat-agent-avatar">🤖</div>
+                                    <div style="display: flex; gap: 5px; height: 20px; align-items: center; justify-items: center;">
+                                        <div class="chat-agent-name">李白</div>
+                                        <!-- <div class="chat-agent-status">在线</div> -->
+                                        <div id="change-agent">
+                                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M15 10.5751C15.4142 10.5751 15.75 10.9109 15.75 11.3251C15.7499 11.7393 15.4142 12.0751 15 12.0751H4.18555L6.45703 14.1454C6.76307 14.4245 6.7848 14.8989 6.50586 15.205C6.22678 15.5111 5.75237 15.5329 5.44629 15.2538L1.74512 11.8788C1.5163 11.6702 1.43891 11.3424 1.55078 11.0537C1.66274 10.7651 1.94048 10.5751 2.25 10.5751H15ZM10.7441 3.24506C11.0231 2.93906 11.4976 2.91641 11.8037 3.19525L15.5049 6.57025C15.7336 6.7788 15.8109 7.10679 15.6992 7.39545C15.5873 7.68419 15.3097 7.87494 15 7.87494H2.25C1.8358 7.87493 1.5 7.53915 1.5 7.12494C1.5 6.71074 1.8358 6.37496 2.25 6.37494H13.0645L10.793 4.30463C10.487 4.02563 10.4653 3.55115 10.7441 3.24506Z" fill="#8F95A3"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <svg width="40" height="40" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M21.8701 14.2792C22.1181 14.0708 22.4642 14.0252 22.7578 14.162C23.0515 14.2987 23.2392 14.5929 23.2393 14.9169V29.0838C23.2392 29.4078 23.0515 29.702 22.7578 29.8387C22.4641 29.9755 22.1181 29.93 21.8701 29.7215L17.3652 25.9325H14.083C13.623 25.9323 13.2501 25.5595 13.25 25.0995V18.9012C13.2501 18.4412 13.623 18.0684 14.083 18.0682H17.3652L21.8701 14.2792ZM26.8428 16.0712C27.126 15.7085 27.65 15.6436 28.0127 15.9266C29.5182 17.1023 30.417 19.4603 30.417 22.0008C30.4169 24.5412 29.5181 26.8985 28.0127 28.0741C27.65 28.3571 27.126 28.2922 26.8428 27.9296C26.5599 27.5668 26.6247 27.0438 26.9873 26.7606C27.9453 26.0125 28.7499 24.2418 28.75 22.0008C28.75 19.7596 27.9453 17.9883 26.9873 17.2401C26.6248 16.9569 26.5599 16.4338 26.8428 16.0712ZM24.7559 19.3163C25.0878 18.9976 25.6158 19.0078 25.9346 19.3397L25.9355 19.3407L25.9365 19.3426L25.9453 19.3514L25.96 19.368C25.971 19.3803 25.9846 19.3956 26 19.4139C26.0308 19.4506 26.0702 19.4993 26.1143 19.5604C26.2023 19.6827 26.3113 19.8549 26.418 20.077C26.6327 20.5244 26.833 21.1685 26.833 22.0008C26.8329 22.833 26.6327 23.4764 26.418 23.9237C26.3113 24.1458 26.2023 24.318 26.1143 24.4403C26.0703 24.5014 26.0308 24.5502 26 24.5868C25.9846 24.6051 25.971 24.6204 25.96 24.6327L25.9453 24.6493L25.9365 24.6581L25.9355 24.66C25.6168 24.992 25.0879 25.0032 24.7559 24.6844C24.4279 24.3692 24.4137 23.8499 24.7217 23.5174L24.7236 23.5155C24.7293 23.5087 24.7433 23.4923 24.7617 23.4667C24.7987 23.4153 24.8552 23.3267 24.915 23.202C25.0336 22.955 25.1669 22.5571 25.167 22.0008C25.167 21.4443 25.0336 21.0458 24.915 20.7987C24.8552 20.674 24.7987 20.5854 24.7617 20.534C24.7433 20.5084 24.7293 20.492 24.7236 20.4852L24.7217 20.4833C24.4137 20.1508 24.4279 19.6315 24.7559 19.3163Z" fill="#8F95A3"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="chat-controls">
+                                    <button class="expand-btn" id="expand-btn">
+                                        <span id="expand-icon">⛶</span>
+                                        <span id="expand-text">展开</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="messages-container" id="messages-container">
+                                <div class="default-hint">
+                                    <span class="hint-text">你想问我什么问题？</span>
+                                </div>
+                            </div>
+                            <div class="chat-bottom" id="chat-bottom">
+                                <button class="speaker-btn" id="speaker-btn" title="语音播报">
+                                    <svg width="50" height="50" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M21.8701 14.2792C22.1181 14.0708 22.4642 14.0252 22.7578 14.162C23.0515 14.2987 23.2392 14.5929 23.2393 14.9169V29.0838C23.2392 29.4078 23.0515 29.702 22.7578 29.8387C22.4641 29.9755 22.1181 29.93 21.8701 29.7215L17.3652 25.9325H14.083C13.623 25.9323 13.2501 25.5595 13.25 25.0995V18.9012C13.2501 18.4412 13.623 18.0684 14.083 18.0682H17.3652L21.8701 14.2792ZM26.8428 16.0712C27.126 15.7085 27.65 15.6436 28.0127 15.9266C29.5182 17.1023 30.417 19.4603 30.417 22.0008C30.4169 24.5412 29.5181 26.8985 28.0127 28.0741C27.65 28.3571 27.126 28.2922 26.8428 27.9296C26.5599 27.5668 26.6247 27.0438 26.9873 26.7606C27.9453 26.0125 28.7499 24.2418 28.75 22.0008C28.75 19.7596 27.9453 17.9883 26.9873 17.2401C26.6248 16.9569 26.5599 16.4338 26.8428 16.0712ZM24.7559 19.3163C25.0878 18.9976 25.6158 19.0078 25.9346 19.3397L25.9355 19.3407L25.9365 19.3426L25.9453 19.3514L25.96 19.368C25.971 19.3803 25.9846 19.3956 26 19.4139C26.0308 19.4506 26.0702 19.4993 26.1143 19.5604C26.2023 19.6827 26.3113 19.8549 26.418 20.077C26.6327 20.5244 26.833 21.1685 26.833 22.0008C26.8329 22.833 26.6327 23.4764 26.418 23.9237C26.3113 24.1458 26.2023 24.318 26.1143 24.4403C26.0703 24.5014 26.0308 24.5502 26 24.5868C25.9846 24.6051 25.971 24.6204 25.96 24.6327L25.9453 24.6493L25.9365 24.6581L25.9355 24.66C25.6168 24.992 25.0879 25.0032 24.7559 24.6844C24.4279 24.3692 24.4137 23.8499 24.7217 23.5174L24.7236 23.5155C24.7293 23.5087 24.7433 23.4923 24.7617 23.4667C24.7987 23.4153 24.8552 23.3267 24.915 23.202C25.0336 22.955 25.1669 22.5571 25.167 22.0008C25.167 21.4443 25.0336 21.0458 24.915 20.7987C24.8552 20.674 24.7987 20.5854 24.7617 20.534C24.7433 20.5084 24.7293 20.492 24.7236 20.4852L24.7217 20.4833C24.4137 20.1508 24.4279 19.6315 24.7559 19.3163Z" fill="#666"/>
+                                    </svg>
+                                </button>
+                            </div>  
+                        </div>
+                    </div>
+                    
+                    <!-- 底部渐变区域和按钮（常驻显示） -->
+                    <div class="bottom-gradient">
+                        <div>
+
+                        </div>
+                        <div class="input-btns">
+                            <button class="input-btn voice-input-btn" id="bottom-voice-btn">
+                                <img src="imgs/说话.png" alt="语音输入" />
+                            </button>
+                            <button class="input-btn keyboard-input-btn" id="bottom-keyboard-btn">
+                                <img src="imgs/键盘.png" alt="键盘输入" />
+                            </button>
+                        </div>
+                        <!-- 右侧：功能按钮 -->
+                        <div class="action-btns">
+                            <button class="action-btn" id="new-chat-btn" title="新会话">
+                                <img src="imgs/新会话.png" alt="新会话" />
+                            </button>
+                            <button class="action-btn" id="history-chat-btn" title="历史会话">
+                                <img src="imgs/历史会话.png" alt="历史会话" />
+                            </button>
+                            <button class="action-btn" id="exit-btn" title="退出">
+                                <img src="imgs/错.png" alt="退出" />
+                            </button>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据
+        const chatHistories = [
+            {
+                id: 'chat-1',
+                title: '李白',
+                preview: '谢谢帮我了解《将进酒》...',
+                time: '10:30',
+                messages: [
+                    { type: 'agent', text: '你想问我什么问题？', avatar: '' },
+                    { type: 'user', text: '《将进酒》全文是什么？', avatar: '' },
+                    { type: 'agent', text: '将进酒（唐・李白）君不见，黄河之水天上来，奔流到海不复回。君不见，高堂明镜悲白发，朝如青丝暮成雪。人生得意须尽欢，莫使金樽空对月。天生我材必有用，千金散尽还复来。烹羊宰牛且为乐，会须一饮三百杯。岑夫子，丹丘生，将进酒，杯莫停。与君歌一曲，请君为我倾耳听。钟鼓馔玉不足贵，但愿长醉不复醒。古来圣贤皆寂寞，惟有饮者留其名。陈王昔时宴平乐，斗酒十千恣欢谑。主人何为言少钱，径须沽取对君酌。五花马、千金裘，呼儿将出换美酒，与尔同销万古愁！要不要我把它的白话译文和重点注释也整理给你？', avatar: '🤖' },
+                    { type: 'user', text: '将进酒的创作背景是什么？', avatar: '' },
+                    { type: 'agent', text: '唐玄宗天宝十一年，李白被朝廷罢官放逐多年，仕途失意、抱负难酬。他与好友岑勋、元丹丘欢聚饮酒，心中满腔愤懑与豪情无处抒发，借劝酒作诗，抒发怀才不遇的苦闷，尽显狂放洒脱。', avatar: '' }
+                ]
+            },
+            {
+                id: 'chat-2',
+                title: '数学小助手',
+                preview: '明白了，用求根公式...',
+                time: '09:45',
+                messages: [
+                    { type: 'user', text: '怎么解 x² - 5x + 6 = 0？', avatar: '👤' },
+                    { type: 'agent', text: '这是一个一元二次方程。我们可以使用因式分解法：x² - 5x + 6 = (x-2)(x-3) = 0，所以 x = 2 或 x = 3。', avatar: '🤖' }
+                ]
+            }
+        ];
+
+        const tasks = [
+            { id: 1, title: '李白 - 了解《将进酒》', time: '10:30', type: 'agent', status: 'pending' },
+            { id: 2, title: '英语听说训练', time: '10:25', type: 'agent', status: 'completed' },
+            { id: 3, title: '课堂小测：一元二次方程', time: '10:20', type: 'instruction', status: 'pending' },
+            { id: 4, title: '数学小助手 - 三角函数入门', time: '10:15', type: 'agent', status: 'ended' }
+        ];
+
+        // 状态
+        let isExpanded = false;
+        let isLeftOpen = false;
+        let isRightOpen = false;
+        let currentChatId = 'chat-1';
+
+        // 初始化
+        function init() {
+            renderChatList();
+            renderTasks();
+            // 不渲染完整对话，只显示默认提示（展开时才渲染）
+            setupEventListeners();
+            setupBackground();
+        }
+
+        // 设置背景
+        function setupBackground() {
+            // 背景已在 CSS 中设置为李白.png
+        }
+
+        // 渲染对话列表
+        function renderChatList() {
+            const container = document.getElementById('chat-list');
+            container.innerHTML = chatHistories.map(chat => `
+                <div class="chat-item ${chat.id === currentChatId ? 'active' : ''}" data-id="${chat.id}">
+                    <span class="chat-item-icon">💬</span>
+                    <div class="chat-item-info">
+                        <div class="chat-item-title">${chat.title}</div>
+                        <div class="chat-item-meta">${chat.preview}</div>
+                    </div>
+                    <span class="chat-item-time">${chat.time}</span>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.chat-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    currentChatId = item.dataset.id;
+                    const chat = chatHistories.find(c => c.id === currentChatId);
+                    if (chat) {
+                        renderMessages(chat.messages);
+                    }
+                    renderChatList();
+                });
+            });
+        }
+
+        // 渲染任务列表
+        function renderTasks() {
+            const container = document.getElementById('task-list');
+            container.innerHTML = tasks.map(task => {
+                const statusText = task.status === 'pending' ? '未完成' : task.status === 'completed' ? '已完成' : '已结束';
+                const statusClass = task.status === 'pending' ? 'pending' : task.status === 'completed' ? 'completed' : 'ended';
+                return `
+                    <div class="task-item task-${statusClass}">
+                        <div class="task-header">
+                            ${task.type === 'agent' ? '<span class="task-badge agent">智能体</span>' : '<span class="task-badge instruction">指令</span>'}
+                            <span class="task-title">${task.title}</span>
+                        </div>
+                        <div class="task-footer">
+                            <span class="task-time">${task.time}</span>
+                            <span class="task-status ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 渲染消息
+        function renderMessages(messages) {
+            const container = document.getElementById('messages-container');
+            container.innerHTML = messages.map(msg => `
+                <div class="message ${msg.type}">
+                    <div class="message-content">
+                        ${msg.text}
+                        <hr class="message-divider" />
+                        <div class="message-footer">
+                            <div class="pupple-speaker-btn-container">
+                                <div class="pupple-speaker-btn">
+                                    <img src="imgs/${msg.type === 'agent' ? 'labagray.png' : 'labawhite.png'}" alt="语音输入" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 左侧边栏切换
+            document.getElementById('toggle-left').addEventListener('click', () => {
+                isLeftOpen = !isLeftOpen;
+                document.getElementById('sidebar-left').classList.toggle('open', isLeftOpen);
+                // document.getElementById('toggle-left').classList.remove('open');
+                // document.getElementById('toggle-left').classList.toggle('close', isLeftOpen);
+                // document.getElementById('toggle-left').textContent = isLeftOpen ? '◀' : '▶';
+            });
+
+            document.getElementById('close-left').addEventListener('click', () => {
+                isLeftOpen = false;
+                document.getElementById('sidebar-left').classList.remove('open');
+                // document.getElementById('toggle-left').classList.toggle('open', !isLeftOpen);
+                // document.getElementById('toggle-left').classList.remove('close');
+                // document.getElementById('toggle-left').textContent = '▶';
+            });
+
+            document.getElementById('history-chat-btn').addEventListener('click', () => {
+                document.getElementById('sidebar-left').classList.toggle('open', true);
+                // document.getElementById('toggle-left').classList.remove('open');
+                // document.getElementById('toggle-left').classList.toggle('close', true);
+                // document.getElementById('toggle-left').textContent = isLeftOpen ? '◀' : '▶';
+            });
+
+            // 右侧边栏切换
+            document.getElementById('toggle-right').addEventListener('click', () => {
+                isRightOpen = !isRightOpen;
+                document.getElementById('sidebar-right').classList.toggle('open', isRightOpen);
+                // document.getElementById('toggle-right').classList.remove('open');
+                // document.getElementById('toggle-right').classList.toggle('close', isRightOpen);
+                // document.getElementById('toggle-right').textContent = isRightOpen ? '▶' : '◀';
+            });
+
+            document.getElementById('close-right').addEventListener('click', () => {
+                isRightOpen = false;
+                document.getElementById('sidebar-right').classList.remove('open');
+                // document.getElementById('toggle-right').classList.toggle('open', !isRightOpen);
+                // document.getElementById('toggle-right').classList.remove('close');
+                // document.getElementById('toggle-right').textContent = '◀';
+            });
+
+            document.getElementById('change-agent').addEventListener('click', () => {
+                document.getElementById('sidebar-right').classList.toggle('open', true);
+                // document.getElementById('toggle-right').classList.remove('open');
+                // document.getElementById('toggle-right').classList.toggle('close', true);
+                // document.getElementById('toggle-right').textContent = isRightOpen ? '▶' : '◀';
+            });
+
+            // 展开/收起对话框
+            document.getElementById('expand-btn').addEventListener('click', () => {
+                isExpanded = !isExpanded;
+                const chatBox = document.getElementById('chat-box');
+                const expandIcon = document.getElementById('expand-icon');
+                const expandText = document.getElementById('expand-text');
+                const defaultHint = document.querySelector('.default-hint');
+                const messagesContainer = document.getElementById('messages-container');
+
+                if (isExpanded) {
+                    chatBox.className = 'chat-box-expanded';
+                    expandIcon.textContent = '';
+                    expandText.textContent = '收起';
+                    // 隐藏默认提示，显示对话内容
+                    if (defaultHint) {
+                        defaultHint.style.display = 'none';
+                    }
+                    // 渲染对话内容
+                    const currentChatData = chatHistories.find(c => c.id === currentChatId);
+                    if (currentChatData) {
+                        renderMessages(currentChatData.messages);
+                    }
+
+                    const chatBottom = document.getElementById('chat-bottom');
+                    chatBottom.classList.add('none');
+                    messagesContainer.classList.add('expanded');
+                } else {
+                    chatBox.className = 'chat-box-default';
+                    expandIcon.textContent = '⛶';
+                    expandText.textContent = '展开';
+                    // 清空消息区域，显示默认提示（只显示文字）
+                    messagesContainer.innerHTML = `
+                        <div class="default-hint">
+                            <span class="hint-text">你想问我什么问题？</span>
+                        </div>
+                    `;
+                    const chatBottom = document.getElementById('chat-bottom');
+                    chatBottom.classList.remove('none');
+                    messagesContainer.classList.remove('expanded');
+                }
+            });
+
+            document.getElementById('new-chat-btn').addEventListener('click', () => {
+                isExpanded = false;
+                const chatBox = document.getElementById('chat-box');
+                const expandIcon = document.getElementById('expand-icon');
+                const expandText = document.getElementById('expand-text');
+                const defaultHint = document.querySelector('.default-hint');
+                const messagesContainer = document.getElementById('messages-container');
+
+                if (isExpanded) {
+                    chatBox.className = 'chat-box-expanded';
+                    expandIcon.textContent = '';
+                    expandText.textContent = '收起';
+                    // 隐藏默认提示，显示对话内容
+                    if (defaultHint) {
+                        defaultHint.style.display = 'none';
+                    }
+                    // 渲染对话内容
+                    const currentChatData = chatHistories.find(c => c.id === currentChatId);
+                    if (currentChatData) {
+                        renderMessages(currentChatData.messages);
+                    }
+
+                    const chatBottom = document.getElementById('chat-bottom');
+                    chatBottom.classList.add('none');
+                    messagesContainer.classList.add('expanded');
+                } else {
+                    chatBox.className = 'chat-box-default';
+                    expandIcon.textContent = '⛶';
+                    expandText.textContent = '展开';
+                    // 清空消息区域，显示默认提示（只显示文字）
+                    messagesContainer.innerHTML = `
+                        <div class="default-hint">
+                            <span class="hint-text">你想问我什么问题？</span>
+                        </div>
+                    `;
+                    const chatBottom = document.getElementById('chat-bottom');
+                    chatBottom.classList.remove('none');
+                    messagesContainer.classList.remove('expanded');
+                }
+            });
+
+            // 消息输入
+            document.getElementById('message-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // 语音按钮
+            document.getElementById('voice-btn').addEventListener('click', () => {
+                alert('语音输入功能');
+            });
+
+            // 底部语音按钮
+            document.getElementById('bottom-voice-btn').addEventListener('click', () => {
+                alert('底部语音输入功能');
+            });
+
+            // 底部键盘按钮
+            document.getElementById('bottom-keyboard-btn').addEventListener('click', () => {
+                alert('底部键盘输入功能');
+            });
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const chat = chatHistories.find(c => c.id === currentChatId);
+            if (chat) {
+                chat.messages.push({
+                    type: 'user',
+                    text: text,
+                    avatar: '👤'
+                });
+                renderMessages(chat.messages);
+                input.value = '';
+
+                // 模拟回复
+                setTimeout(() => {
+                    chat.messages.push({
+                        type: 'agent',
+                        text: '收到你的问题，正在思考...',
+                        avatar: '🤖'
+                    });
+                    renderMessages(chat.messages);
+                }, 1000);
+            }
+        }
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>

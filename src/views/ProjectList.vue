@@ -3,9 +3,11 @@
     <div class="list-header">
       <h2 class="list-title">
         <el-icon :size="28" color="#667eea"><Briefcase /></el-icon>
-        公司方案列表
+        {{ isCompany ? '公司方案列表' : '个人作品集' }}
       </h2>
-      <p class="list-desc">浏览我们为各公司提供的专业解决方案</p>
+      <p class="list-desc">
+        {{ isCompany ? '浏览我们为各公司提供的专业解决方案' : '展示个人精选设计作品' }}
+      </p>
     </div>
 
     <div class="cards-container">
@@ -13,14 +15,17 @@
         v-for="project in projects" 
         :key="project.id" 
         class="project-card"
-        @click="$router.push(`/projects/${project.id}`)"
+        @click="$router.push(project.path)"
       >
-        <div class="card-icon">
+        <div class="card-icon" v-if="project.thumbnail">
+          <img :src="project.thumbnail" :alt="project.title" class="card-image" />
+        </div>
+        <div class="card-icon" v-else>
           <el-icon size="40" color="white">
             <Box />
           </el-icon>
         </div>
-        <h3 class="card-title">{{ project.name }}</h3>
+        <h3 class="card-title">{{ project.title }}</h3>
         <p class="card-desc">{{ project.description }}</p>
         <div class="card-action">
           <span>查看详情</span>
@@ -37,10 +42,25 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import { Briefcase, Box, ArrowRight, Folder } from '@element-plus/icons-vue'
-import { projectsList } from '@/data/projects'
+import { useRoute } from 'vue-router'
+import { loadProjects, getProjectsByCategory } from '@/data/projects'
 
-const projects = projectsList
+const route = useRoute()
+const isLoading = ref(true)
+const allProjects = ref([])
+
+const isCompany = computed(() => route.params.category === 'company')
+
+const projects = computed(() => {
+  return getProjectsByCategory(route.params.category)
+})
+
+onMounted(async () => {
+  await loadProjects()
+  isLoading.value = false
+})
 </script>
 
 <style scoped>
@@ -99,6 +119,13 @@ const projects = projectsList
   justify-content: center;
   margin-bottom: 20px;
   transition: transform 0.3s ease;
+  overflow: hidden;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .project-card:hover .card-icon {
