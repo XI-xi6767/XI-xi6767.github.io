@@ -5,13 +5,17 @@ const projectsData = ref({ company: [], portfolio: [], timestamp: 0 })
 
 export async function loadProjects() {
   try {
+    // 优先使用静态数据（更可靠）
     let data = staticProjectsData
     
-    try {
-      const response = await fetch('/.netlify/functions/scan-projects')
-      data = await response.json()
-    } catch (apiError) {
-      console.log('API unavailable, using static data')
+    // 仅在开发环境尝试从 API 获取最新数据
+    if (import.meta.env.DEV) {
+      try {
+        const response = await fetch('/.netlify/functions/scan-projects')
+        data = await response.json()
+      } catch (apiError) {
+        console.log('API unavailable, using static data')
+      }
     }
     
     projectsData.value = {
